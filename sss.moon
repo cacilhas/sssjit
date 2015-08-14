@@ -33,28 +33,64 @@ ffi.cdef [[
         in_addr_t s_addr;
     };
 
-    struct sockaddr {
-        __uint8_t   sa_len;
-        sa_family_t sa_family;
-        char        sa_data[14];
+    struct in6_addr {
+        union {
+            __uint8_t u6_addr8[16];
+            __int16_t u6_addr16[8];
+            __int32_t u6_addr32[4];
+        } in6_u;
     };
+]]
 
-    struct sockaddr_in {
-        __uint8_t      sin_len;
-        sa_family_t    sin_family;
-        in_port_t      sin_port;
-        struct in_addr sin_addr;
-        char           sin_zero[8];
-    };
+switch ffi.os
+    when "Darwin"
+        ffi.cdef [[
+            struct sockaddr {
+                __uint8_t   sa_len;
+                sa_family_t sa_family;
+                char        sa_data[14];
+            };
 
-    struct sockaddr_in6 {
-        __uint8_t      sin6_len;
-        sa_family_t    sin6_family;
-        in_port_t      sin6_port;
-        struct in_addr sin6_addr;
-        __uint32_t     sin6_scope_id;
-    };
+            struct sockaddr_in {
+                __uint8_t      sin_len;
+                sa_family_t    sin_family;
+                in_port_t      sin_port;
+                struct in_addr sin_addr;
+                char           sin_zero[8];
+            };
 
+            struct sockaddr_in6 {
+                __uint8_t       sin6_len;
+                sa_family_t     sin6_family;
+                in_port_t       sin6_port;
+                struct in6_addr sin6_addr;
+                __uint32_t      sin6_scope_id;
+            };
+        ]]
+
+    else
+        ffi.cdef [[
+            struct sockaddr {
+                sa_family_t sa_family;
+                char        sa_data[14];
+            };
+
+            struct sockaddr_in {
+                sa_family_t    sin_family;
+                in_port_t      sin_port;
+                struct in_addr sin_addr;
+                char           sin_zero[8];
+            };
+
+            struct sockaddr_in6 {
+                sa_family_t     sin6_family;
+                in_port_t       sin6_port;
+                struct in6_addr sin6_addr;
+                __uint32_t      sin6_scope_id;
+            };
+        ]]
+
+ffi.cdef [[
     struct timeval {
         long      tv_sec;
         __int32_t tv_usec;
