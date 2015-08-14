@@ -47,6 +47,14 @@ ffi.cdef [[
         char           sin_zero[8];
     };
 
+    struct sockaddr_in6 {
+        __uint8_t      sin6_len;
+        sa_family_t    sin6_family;
+        in_port_t      sin6_port;
+        struct in_addr sin6_addr;
+        __uint32_t     sin6_scope_id;
+    };
+
     struct timeval {
         long      tv_sec;
         __int32_t tv_usec;
