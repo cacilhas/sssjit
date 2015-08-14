@@ -313,8 +313,8 @@ SO =
 
 --------------------------------------------------------------------------------
 get_sockaddr = (domain, address) ->
-    local sockaddr
     address = tocaddress address if (type address) == "table"
+    sockaddr = nil
 
     if domain == AF.inet
         sockaddr = ffi.new "struct sockaddr_in[?]", 1
@@ -342,9 +342,6 @@ get_sockaddr = (domain, address) ->
         C.inet_pton AF.inet6, host, sockaddr[0].sin6_addr
 
         sockaddr[0].sin6_port = C.htons address.port
-
-    else
-        sockaddr = nil
 
     size = if sockaddr == nil then 0 else ffi.sizeof sockaddr
     (ffi.cast "const struct sockaddr *", sockaddr), size
