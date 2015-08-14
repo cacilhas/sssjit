@@ -4,7 +4,7 @@ import floor from math
 local *
 
 
-_VERSION = "0.4"
+_VERSION = "1.0b"
 _DESCRIPTION = "LuaJIT-powered Simple Stupid Socket"
 _AUTHOR = "ℜodrigo Arĥimedeς ℳontegasppa ℭacilhας <batalema@cacilhas.info>"
 _LICENSE = "BSD-3 Clausule"
@@ -447,12 +447,15 @@ Socket = ffi.metatype "socket_wrapper_t",
             error strerror ffi.errno! if status == -1
 
         getsockopt: (optname) =>
+            -- TODO: get other value types
             optval = ffi.new "int[?]", 1
             status = C.getsockopt @sid, SOL_SOCKET, optname, optval, (ffi.sizeof optval)
             error strerror ffi.errno! if status == -1
             tonumber optval[0]
 
         settimeout: (param) =>
+            -- TODO: gettimeout
+
             local snd, rcv
             switch (type param)
                 when "number"
