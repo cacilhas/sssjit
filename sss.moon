@@ -107,8 +107,7 @@ ffi.cdef [[
     } address_t;
 ]]
 
-
-switch ffi.so
+switch ffi.os
     when "Linux"
         ffi.cdef [[
             enum {
