@@ -216,10 +216,8 @@ INADDR =
 SOL_SOCKET = ffi.cast "int", switch ffi.os
     when "Linux"
         0x0001
-    when "Darwin"
-        0xffff
     else
-        0x0000
+        0xffff
 
 
 SOCK =
