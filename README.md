@@ -100,7 +100,7 @@ table.foreach sss.AF, print
 
 [The BSD 3-Clause License](http://opensource.org/licenses/BSD-3-Clause)
 
-Copyright © 2015, Rodrigo Cacilhας <batalema@cacilhas.info>
+Copyright © 2015, Rodrigo Cacilhας \<batalema@cacilhas.info>
 
 All rights reserved.
 
