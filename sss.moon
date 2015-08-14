@@ -348,6 +348,10 @@ get_sockaddr = (domain, address) ->
         0, 0
 
 
+strerror = (errnum) ->
+    ffi.string C.strerror errnum
+
+
 tocaddress = (address) ->
     assert (type address.host) == "string" and (type address.port) == "number"
     ffi.new "address_t", address
@@ -370,30 +374,30 @@ Socket = ffi.metatype "socket_wrapper_t",
 
         connect: (address) =>
             sockaddr, size = get_sockaddr @domain, address
-            error C.strerror ffi.errno! if sockaddr == 0
+            error strerror ffi.errno! if sockaddr == 0
             status = C.connect @sid, sockaddr, size
 
-            error C.strerror ffi.errno! if status == -1
+            error strerror ffi.errno! if status == -1
             status
 
         bind: (address) =>
             sockaddr, size = get_sockaddr @domain, address
-            error C.strerror ffi.errno! if sockaddr == 0
+            error strerror ffi.errno! if sockaddr == 0
             status = C.bind @sid, sockaddr, size
 
-            error C.strerror ffi.errno! if status == -1
+            error strerror ffi.errno! if status == -1
             status
 
         listen: (backlog=1) =>
             status = C.listen @sid, backlog
-            error C.strerror ffi.errno! if status == -1
+            error strerror ffi.errno! if status == -1
 
         accept: =>
             sockaddr = ffi.new "struct sockaddr[?]", 1
             sin_size = ffi.new "socklen_t[?]", 1
             sin_size[0] = ffi.sizeof sockaddr
             sid = C.accept @sid, sockaddr, sin_size
-            error C.strerror ffi.errno! if sid == -1
+            error strerror ffi.errno! if sid == -1
 
             if @domain == AF.inet6
                 sockaddr_p = ffi.cast "struct sockaddr_in6 *", sockaddr
@@ -424,27 +428,27 @@ Socket = ffi.metatype "socket_wrapper_t",
 
         send: (data) =>
             status = C.send @sid, data, #data, 0
-            error C.strerror ffi.errno! if status == -1
+            error strerror ffi.errno! if status == -1
 
         sendto: (data, address) =>
             assert (type host) == "string" and (type port) == "number"
             port = ffi.cast "uint16_t", port
             sockaddr, size = get_sockaddr @domain, address
-            error C.strerror ffi.errno! if sockaddr == 0
+            error strerror ffi.errno! if sockaddr == 0
             status = sendto @sid, data, #data, 0, sockaddr, size
-            error C.strerror ffi.errno! if status == -1
+            error strerror ffi.errno! if status == -1
 
         setsockopt: (optname, value=true) =>
-            aux = ffi.new "int[?]", 1
-            aux[0] = ffi.cast "int", (if value then 1 else 0)
-            status = C.setsockopt @sid, SOL_SOCKET, optname, aux, (ffi.sizeof aux)
-            error C.strerror ffi.errno! if status == -1
+            optval = ffi.new "int[?]", 1
+            optval[0] = ffi.cast "int", (if value then 1 else 0)
+            status = C.setsockopt @sid, SOL_SOCKET, optname, optval, (ffi.sizeof optval)
+            error strerror ffi.errno! if status == -1
 
         getsockopt: (optname) =>
             value = ffi.new "int[?]", 1
             status = C.getsockopt @sid, SOL_SOCKET, optname, value, (ffi.sizeof value)
-            error C.strerror ffi.errno! if status == -1
-            tonumber value[0]
+            error strerror ffi.errno! if status == -1
+            (tonumber value[0]) != 0
 
 
 socket = (domain=AF.inet, type_=SOCK.stream, protocol=0) ->
