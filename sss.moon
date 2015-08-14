@@ -352,6 +352,7 @@ strerror = (errnum) ->
     ffi.string C.strerror errnum
 
 
+--------------------------------------------------------------------------------
 tocaddress = (address) ->
     assert (type address.host) == "string" and (type address.port) == "number"
     ffi.new "address_t", address
