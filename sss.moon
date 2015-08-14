@@ -347,7 +347,7 @@ strerror = (errnum) ->
 
 --------------------------------------------------------------------------------
 tocaddress = (address) ->
-    assert (type address.host) == "string" and (type address.port) == "number"
+    assert (type address) == "table"
     ffi.new "address_t", address
 
 
@@ -423,7 +423,6 @@ Socket = ffi.metatype "socket_wrapper_t",
             error strerror ffi.errno! if status == -1
 
         sendto: (data, address) =>
-            assert (type host) == "string" and (type port) == "number"
             port = ffi.cast "uint16_t", port
             sockaddr, size = get_sockaddr @domain, address
             error strerror ffi.errno! if sockaddr == nil
