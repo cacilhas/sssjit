@@ -1,4 +1,5 @@
 ffi = assert require "ffi"
+import floor from math
 
 local *
 
@@ -430,8 +431,18 @@ Socket = ffi.metatype "socket_wrapper_t",
             error strerror ffi.errno! if status == -1
 
         setsockopt: (optname, value=1) =>
-            optval = ffi.new "int[?]", 1
-            optval[0] = value
+            local optval
+            switch type(value)
+                when "number"
+                    optval = ffi.new "int[?]", 1
+                    optval[0] = value
+                when "cdata"
+                    optval = value
+                when "string"
+                    optval = value
+                else
+                    error "unknown value: #{value}"
+
             status = C.setsockopt @sid, SOL_SOCKET, optname, optval, (ffi.sizeof optval)
             error strerror ffi.errno! if status == -1
 
@@ -440,6 +451,29 @@ Socket = ffi.metatype "socket_wrapper_t",
             status = C.getsockopt @sid, SOL_SOCKET, optname, optval, (ffi.sizeof optval)
             error strerror ffi.errno! if status == -1
             tonumber optval[0]
+
+        settimeout: (param) =>
+            local snd, rcv
+            switch (type param)
+                when "number"
+                    snd = param
+                    rcv = param
+                when "table"
+                    snd = param.send
+                    rcv = param.receive
+                else
+                    error "unknown parameter #{param}"
+
+            if snd
+                tval = ffi.new "struct timeval",
+                    tv_sec: floor snd
+                    tv_usec: floor (snd * 1000000) % 1000000
+                @\setsockopt SO.sndtimeo, tval
+            if rcv
+                tval = ffi.new "struct timeval",
+                    tv_sec: floor rcv
+                    tv_usec: floor (rcv * 1000000) % 1000000
+                @\setsockopt SO.rcvtimeo, tval
 
 
 socket = (domain=AF.inet, type_=SOCK.stream, protocol) ->
