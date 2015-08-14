@@ -96,6 +96,30 @@ table.foreach sss.AF, print
 ```
 
 
+### The sample echo server
+
+```
+#!moonscript
+
+#!/usr/bin/env moon
+
+sss = assert require "sss"
+
+s = sss.socket!
+s\setsockopt sss.SO.reuseaddr
+s\bind
+    host: "*"
+    port: 32000
+s\listen!
+
+while true
+    c = s\accept!
+    got = c\receive!
+    c\send got
+    c\close!
+```
+
+
 ## License
 
 [The BSD 3-Clause License](http://opensource.org/licenses/BSD-3-Clause)
