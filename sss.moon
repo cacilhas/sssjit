@@ -1,5 +1,8 @@
 ffi = assert require "ffi"
 
+local *
+
+
 _VERSION = "0.4"
 _DESCRIPTION = "LuaJIT-powered Simple Stupid Socket"
 _AUTHOR = "ℜodrigo Arĥimedeς ℳontegasppa ℭacilhας <batalema@cacilhas.info>"
@@ -62,14 +65,6 @@ ffi.cdef [[
         INADDR_ANY =             0x00000000,
         INADDR_BROADCAST =       0xffffffff,
         INADDR_LOOPBACK =        0x7f000001,
-        INADDR_UNSPEC_GROUP =    0xe0000000,
-        INADDR_ALLHOSTS_GROUP =  0xe0000001,
-        INADDR_ALLRTRS_GROUP =   0xe0000002,
-        INADDR_ALLRPTS_GROUP =   0xe0000016,
-        INADDR_CARP_GROUP =      0xe0000012,
-        INADDR_PFSYNC_GROUP =    0xe00000f0,
-        INADDR_ALLMDNS_GROUP =   0xe00000fb,
-        INADDR_MAX_LOCAL_GROUP = 0xe00000ff,
     };
 
     enum {
@@ -78,92 +73,6 @@ ffi.cdef [[
         SOCK_RAW =       3,
         SOCK_RDM =       4,
         SOCK_SEQPACKET = 5,
-    };
-
-    enum {
-        AF_UNSPEC =       0,
-        AF_UNIX =         1,
-        AF_LOCAL =        1,
-        AF_INET =         2,
-        AF_IMPLINK =      3,
-        AF_PUP =          4,
-        AF_CHAOS =        5,
-        AF_NS =           6,
-        AF_ISO =          7,
-        AF_OSI =          7,
-        AF_ECMA =         8,
-        AF_DATAKIT =      9,
-        AF_CCITT =       10,
-        AF_SNA =         11,
-        AF_DECnet =      12,
-        AF_DLI =         13,
-        AF_LAT =         14,
-        AF_HYLINK =      15,
-        AF_APPLETALK =   16,
-        AF_ROUTE =       17,
-        AF_LINK =        18,
-        pseudo_AF_XTP =  19,
-        AF_COIP =        20,
-        AF_CNT =         21,
-        pseudo_AF_RTIP = 22,
-        AF_IPX =         23,
-        AF_SIP =         24,
-        pseudo_AF_PIP =  25,
-        AF_NDRV =        27,
-        AF_ISDN =        28,
-        AF_E164 =        28,
-        pseudo_AF_KEY =  29,
-        AF_INET6 =       30,
-        AF_NATM =        31,
-        AF_SYSTEM =      32,
-        AF_NETBIOS =     33,
-        AF_PPP =         34,
-        pseudo_AF_HDRCMPLT = 35,
-        AF_IEEE80211 =   37,
-        AF_UTUN =        38,
-        AF_MAX =         40,
-    };
-
-    enum {
-        SO_DEBUG =        0x0001,
-        SO_ACCEPTCONN =   0x0002,
-        SO_REUSEADDR =    0x0004,
-        SO_KEEPALIVE =    0x0008,
-        SO_DONTROUTE =    0x0010,
-        SO_BROADCAST =    0x0020,
-        SO_USELOOPBACK =  0x0040,
-        SO_LINGER =       0x0080,
-        SO_OOBINLINE =    0x0100,
-        SO_REUSEPORT =    0x0200,
-        SO_TIMESTAMP =    0x0400,
-        SO_TIMESTAMP_MONOTONIC = 0x0800,
-        SO_ACCEPTFILTER = 0x1000,
-        SO_DONTTRUNC =    0x2000,
-        SO_WANTMORE =     0x4000,
-        SO_WANTOOBFLAG =  0x8000,
-
-        SO_SNDBUF =          0x1001,
-        SO_RCVBUF =          0x1002,
-        SO_SNDLOWAT =        0x1003,
-        SO_RCVLOWAT =        0x1004,
-        SO_SNDTIMEO =        0x1005,
-        SO_RCVTIMEO =        0x1006,
-        SO_ERROR =           0x1007,
-        SO_TYPE =            0x1008,
-        SO_LABEL =           0x1010,
-        SO_PEERLABEL =       0x1011,
-        SO_NREAD =           0x1020,
-        SO_NKE =             0x1021,
-        SO_NOSIGPIPE =       0x1022,
-        SO_NOADDRERR =       0x1023,
-        SO_NWRITE =          0x1024,
-        SO_REUSESHAREUID =   0x1025,
-        SO_NOTIFYCONFLICT =  0x1026,
-        SO_UPCALLCLOSEWAIT = 0x1027,
-        SO_LINGER_SEC =      0x1080,
-        SO_RANDOMPORT =      0x1082,
-        SO_NP_EXTENSIONS =   0x1083,
-        SO_NUMRCVPKT =       0x1112,
     };
 
     uint16_t ntohs(uint16_t);
@@ -199,7 +108,89 @@ ffi.cdef [[
 ]]
 
 
-local *
+switch ffi.so
+    when "Linux"
+        ffi.cdef [[
+            enum {
+                AF_UNSPEC =     0,
+                AF_UNIX =       1,
+                AF_LOCAL =      1,
+                AF_INET =       2,
+                AF_INET6 =     10,
+                AF_IPX =        4,
+                AF_APPLETALK =  5,
+                AF_NETBIOS =   13,
+                AF_KEY =       15,
+                AF_ROUTE =     16,
+                AF_IEEE8021 =  36,
+            };
+
+            enum {
+                SO_DEBUG =     0x0001,
+                SO_REUSEADDR = 0x0002,
+                SO_TYPE =      0x0003,
+                SO_ERROR =     0x0004,
+                SO_DONTROUTE = 0x0005,
+                SO_BROADCAST = 0x0006,
+                SO_SNDBUF =    0x0007,
+                SO_RCVBUF =    0x0008,
+                SO_KEEPALIVE = 0x0009,
+                SO_OOBINLINE = 0x000a,
+                SO_NO_CHECK =  0x000b,
+                SO_PRIORITY =  0x000c,
+                SO_LINGER =    0x000d,
+                SO_BSDCOMPAT = 0x000e,
+                SO_REUSEPORT = 0x000f,
+                SO_PASSCRED  = 0x0010,
+                SO_PEERCRED  = 0x0011,
+                SO_RCVLOWAT  = 0x0012,
+                SO_SNDLOWAT  = 0x0013,
+                SO_RCVTIMEO  = 0x0014,
+                SO_SNDTIMEO  = 0x0015,
+            };
+        ]]
+
+    else
+        ffi.cdef [[
+            enum {
+                AF_UNSPEC =     0,
+                AF_UNIX =       1,
+                AF_LOCAL =      1,
+                AF_INET =       2,
+                AF_INET6 =     30,
+                AF_IPX =       23,
+                AF_APPLETALK = 16,
+                AF_NETBIOS =   33,
+                AF_KEY =       29,
+                AF_ROUTE =     17,
+                AF_IEEE8021 =  37,
+            };
+
+            enum {
+                SO_DEBUG =     0x0001,
+                SO_REUSEADDR = 0x0004,
+                SO_TYPE =      0x1008,
+                SO_ERROR =     0x1007,
+                SO_DONTROUTE = 0x0010,
+                SO_BROADCAST = 0x0020,
+                SO_SNDBUF =    0x1001,
+                SO_RCVBUF =    0x1002,
+                SO_KEEPALIVE = 0x0008,
+                SO_OOBINLINE = 0x0100,
+                SO_NO_CHECK =  0x000b,
+                SO_PRIORITY =  0x000c,
+                SO_BSDCOMPAT = 0x000e,
+                SO_LINGER =    0x0080,
+                SO_REUSEPORT = 0x0200,
+                SO_PASSCRED  = 0x0010,
+                SO_PEERCRED  = 0x0011,
+                SO_SNDLOWAT =  0x1003,
+                SO_RCVLOWAT =  0x1004,
+                SO_SNDTIMEO =  0x1005,
+                SO_RCVTIMEO =  0x1006,
+            };
+        ]]
+
 
 C = ffi.C
 
@@ -209,14 +200,6 @@ INADDR =
     any:       ffi.cast "in_addr_t", C.INADDR_ANY
     broadcast: ffi.cast "in_addr_t", C.INADDR_BROADCAST
     loopback:  ffi.cast "in_addr_t", C.INADDR_LOOPBACK
-    --unspec_group:    ffi.cast "in_addr_t", C.INADDR_UNSPEC_GROUP
-    --allhosts_group:  ffi.cast "in_addr_t", C.INADDR_ALLHOSTS_GROUP
-    --allrtrs_group:   ffi.cast "in_addr_t", C.INADDR_ALLRTRS_GROUP
-    --allrpts_group:   ffi.cast "in_addr_t", C.INADDR_ALLRPTS_GROUP
-    --carp_group:      ffi.cast "in_addr_t", C.INADDR_CARP_GROUP
-    --pfsync_group:    ffi.cast "in_addr_t", C.INADDR_PFSYNC_GROUP
-    --allmdns_group:   ffi.cast "in_addr_t", C.INADDR_ALLMDNS_GROUP
-    --max_local_group: ffi.cast "in_addr_t", C.INADDR_MAX_LOCAL_GROUP
 
 
 getprotobyname = (name) ->
@@ -230,11 +213,7 @@ SOL_SOCKET = ffi.cast "int", switch ffi.os
     when "Windows"
         0xffff
     else
-        proto = getprotobyname "SOL_SOCKET"
-        if proto == nil then 0x0001 else proto
-
-
-IP_PROTO = getprotobyname "ip"
+        0x0001
 
 
 SOCK =
@@ -250,83 +229,37 @@ AF =
     unix:      ffi.cast "sa_family_t", C.AF_UNIX
     local:     ffi.cast "sa_family_t", C.AF_LOCAL
     inet:      ffi.cast "sa_family_t", C.AF_INET
-    implink:   ffi.cast "sa_family_t", C.AF_IMPLINK
-    pup:       ffi.cast "sa_family_t", C.AF_PUP
-    chaos:     ffi.cast "sa_family_t", C.AF_CHAOS
-    ns:        ffi.cast "sa_family_t", C.AF_NS
-    iso:       ffi.cast "sa_family_t", C.AF_ISO
-    osi:       ffi.cast "sa_family_t", C.AF_OSI
-    ecma:      ffi.cast "sa_family_t", C.AF_ECMA
-    datakit:   ffi.cast "sa_family_t", C.AF_DATAKIT
-    ccitt:     ffi.cast "sa_family_t", C.AF_CCITT
-    sna:       ffi.cast "sa_family_t", C.AF_SNA
-    decnet:    ffi.cast "sa_family_t", C.AF_DECnet
-    dli:       ffi.cast "sa_family_t", C.AF_DLI
-    lat:       ffi.cast "sa_family_t", C.AF_LAT
-    hylink:    ffi.cast "sa_family_t", C.AF_HYLINK
-    appletalk: ffi.cast "sa_family_t", C.AF_APPLETALK
-    route:     ffi.cast "sa_family_t", C.AF_ROUTE
-    link:      ffi.cast "sa_family_t", C.AF_LINK
-    xtp:       ffi.cast "sa_family_t", C.pseudo_AF_XTP
-    coip:      ffi.cast "sa_family_t", C.AF_COIP
-    cnt:       ffi.cast "sa_family_t", C.AF_CNT
-    rtip:      ffi.cast "sa_family_t", C.pseudo_AF_RTIP
-    ipx:       ffi.cast "sa_family_t", C.AF_IPX
-    sip:       ffi.cast "sa_family_t", C.AF_SIP
-    pip:       ffi.cast "sa_family_t", C.pseudo_AF_PIP
-    ndrv:      ffi.cast "sa_family_t", C.AF_NDRV
-    isdn:      ffi.cast "sa_family_t", C.AF_ISDN
-    e164:      ffi.cast "sa_family_t", C.AF_E164
-    key:       ffi.cast "sa_family_t", C.pseudo_AF_KEY
     inet6:     ffi.cast "sa_family_t", C.AF_INET6
-    natm:      ffi.cast "sa_family_t", C.AF_NATM
-    system:    ffi.cast "sa_family_t", C.AF_SYSTEM
+    ipx:       ffi.cast "sa_family_t", C.AF_IPX
+    appletalk: ffi.cast "sa_family_t", C.AF_APPLETALK
     netbios:   ffi.cast "sa_family_t", C.AF_NETBIOS
-    ppp:       ffi.cast "sa_family_t", C.AF_PPP
-    hdrcmplt:  ffi.cast "sa_family_t", C.pseudo_AF_HDRCMPLT
-    ieee80211: ffi.cast "sa_family_t", C.AF_IEEE80211
-    utun:      ffi.cast "sa_family_t", C.AF_UTUN
+    key:       ffi.cast "sa_family_t", C.AF_KEY
+    route:     ffi.cast "sa_family_t", C.AF_ROUTE
+    ieee8021:  ffi.cast "sa_family_t", C.AF_IEEE8021
 
 
 SO =
-    debug:           ffi.cast "int", C.SO_DEBUG
-    acceptconn:      ffi.cast "int", C.SO_ACCEPTCONN
-    reuseaddr:       ffi.cast "int", C.SO_REUSEADDR
-    keepalive:       ffi.cast "int", C.SO_KEEPALIVE
-    dontroute:       ffi.cast "int", C.SO_DONTROUTE
-    broadcast:       ffi.cast "int", C.SO_BROADCAST
-    useloopback:     ffi.cast "int", C.SO_USELOOPBACK
-    linger:          ffi.cast "int", C.SO_LINGER
-    oobinline:       ffi.cast "int", C.SO_OOBINLINE
-    resuseport:      ffi.cast "int", C.SO_REUSEPORT
-    timestamp:       ffi.cast "int", C.SO_TIMESTAMP
-    acceptfilter:    ffi.cast "int", C.SO_ACCEPTFILTER
-    donttrunc:       ffi.cast "int", C.SO_DONTTRUNC
-    wantmore:        ffi.cast "int", C.SO_WANTMORE
-    wanttoobflag:    ffi.cast "int", C.SO_WANTOOBFLAG
-    sndbuf:          ffi.cast "int", C.SO_SNDBUF
-    rcvbuf:          ffi.cast "int", C.SO_RCVBUF
-    sndlowat:        ffi.cast "int", C.SO_SNDLOWAT
-    rcvlowat:        ffi.cast "int", C.SO_RCVLOWAT
-    sndtimeo:        ffi.cast "int", C.SO_SNDTIMEO
-    rcvtimeo:        ffi.cast "int", C.SO_RCVTIMEO
-    error:           ffi.cast "int", C.SO_ERROR
-    type:            ffi.cast "int", C.SO_TYPE
-    label:           ffi.cast "int", C.SO_LABEL
-    peerlabel:       ffi.cast "int", C.SO_PEERLABEL
-    nread:           ffi.cast "int", C.SO_NREAD
-    nke:             ffi.cast "int", C.SO_NKE
-    nosigpip:        ffi.cast "int", C.SO_NOSIGPIPE
-    noaddrerr:       ffi.cast "int", C.SO_NOADDRERR
-    nwrite:          ffi.cast "int", C.SO_NWRITE
-    reuseshareuid:   ffi.cast "int", C.SO_REUSESHAREUID
-    notifyconflict:  ffi.cast "int", C.SO_NOTIFYCONFLICT
-    upcallclosewait: ffi.cast "int", C.SO_UPCALLCLOSEWAIT
-    linger_sec:      ffi.cast "int", C.SO_LINGER_SEC
-    randomport:      ffi.cast "int", C.SO_RANDOMPORT
-    np_extensions:   ffi.cast "int", C.SO_NP_EXTENSIONS
-    numrcvpkt:       ffi.cast "int", C.SO_NUMRCVPKT
-    timestamp_monotonic: ffi.cast "int", C.SO_TIMESTAMP_MONOTONIC
+    debug:     ffi.cast "int", C.SO_DEBUG
+    reuseaddr: ffi.cast "int", C.SO_REUSEADDR
+    type:      ffi.cast "int", C.SO_TYPE
+    error:     ffi.cast "int", C.SO_ERROR
+    dontroute: ffi.cast "int", C.SO_DONTROUTE
+    broadcast: ffi.cast "int", C.SO_BROADCAST
+    sndbuf:    ffi.cast "int", C.SO_SNDBUF
+    rcvbuf:    ffi.cast "int", C.SO_RCVBUF
+    keepalive: ffi.cast "int", C.SO_KEEPALIVE
+    oobinline: ffi.cast "int", C.SO_OOBINLINE
+    no_check:  ffi.cast "int", C.SO_NO_CHECK
+    priority:  ffi.cast "int", C.SO_PRIORITY
+    bsdcompat: ffi.cast "int", C.SO_BSDCOMPAT
+    linger:    ffi.cast "int", C.SO_LINGER
+    reuseport: ffi.cast "int", C.SO_REUSEPORT
+    passcred:  ffi.cast "int", C.SO_PASSCRED
+    peercred:  ffi.cast "int", C.SO_PEERCRED
+    sndlowat:  ffi.cast "int", C.SO_SNDLOWAT
+    rcvlowat:  ffi.cast "int", C.SO_RCVLOWAT
+    sndtimeo:  ffi.cast "int", C.SO_SNDTIMEO
+    rcvtimeo:  ffi.cast "int", C.SO_RCVTIMEO
 
 
 --------------------------------------------------------------------------------
@@ -454,9 +387,9 @@ Socket = ffi.metatype "socket_wrapper_t",
             status = sendto @sid, data, #data, 0, sockaddr, size
             error strerror ffi.errno! if status == -1
 
-        setsockopt: (optname, value=true) =>
+        setsockopt: (optname, value=1) =>
             optval = ffi.new "int[?]", 1
-            optval[0] = ffi.cast "int", (if value then 1 else 0)
+            optval[0] = value
             status = C.setsockopt @sid, SOL_SOCKET, optname, optval, (ffi.sizeof optval)
             error strerror ffi.errno! if status == -1
 
@@ -464,7 +397,7 @@ Socket = ffi.metatype "socket_wrapper_t",
             optval = ffi.new "int[?]", 1
             status = C.getsockopt @sid, SOL_SOCKET, optname, optval, (ffi.sizeof optval)
             error strerror ffi.errno! if status == -1
-            (tonumber optval[0]) != 0
+            tonumber optval[0]
 
 
 socket = (domain=AF.inet, type_=SOCK.stream, protocol) ->
@@ -479,7 +412,7 @@ socket = (domain=AF.inet, type_=SOCK.stream, protocol) ->
             error "unknown protocol: #{protocol}" if not (tostring protocol)\match "^cdata<int>"
             p_proto = protocol
         else
-            p_proto = IP_PROTO
+            p_proto = ffi.cast "int", 0  -- IPPROTO_IP
     sid = C.socket domain, type_, p_proto
     Socket sid, domain, type_, p_proto
 
