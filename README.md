@@ -4,6 +4,33 @@ A reimplementation of [SSS](https://bitbucket.org/cacilhas/sss) powered by
 [MoonScript](http://moonscript.org/) and [LuaJIT](http://luajit.org).
 
 
+## Install
+
+```
+sh$ make
+sh$ sudo make install
+```
+
+Before `make install`, you can check if it’s ok by running:
+
+```
+sh$ ./echo.moon
+```
+
+And:
+
+```
+sh$ telnet localhost 32000
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+test
+test
+Connection closed by foreign host.
+sh$
+```
+
+
 ## Use
 
 ```
