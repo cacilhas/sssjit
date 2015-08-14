@@ -319,14 +319,17 @@ get_sockaddr = (domain, address) ->
         sockaddr = ffi.new "struct sockaddr_in[?]", 1
         sockaddr[0].sin_family = AF.inet
 
-        if (C.strcmp address.host, "0.0.0.0") * (C.strcmp address.host, "*") == 0
-            sockaddr[0].sin_addr.s_addr = INADDR.any
-        elseif (C.strcmp address.host, "broadcast")
-            sockaddr[0].sin_addr.s_addr = INADDR.broadcast
-        elseif (C.strcmp address.host, "loopback")
-            sockaddr[0].sin_addr.s_addr = INADDR.loopback
-        else
-            C.inet_aton address.host, sockaddr[0].sin_addr
+        switch ffi.string address.host
+            when "0.0.0.0"
+                sockaddr[0].sin_addr.s_addr = INADDR.any
+            when "*"
+                sockaddr[0].sin_addr.s_addr = INADDR.any
+            when "broadcast"
+                sockaddr[0].sin_addr.s_addr = INADDR.broadcast
+            when "loopback"
+                sockaddr[0].sin_addr.s_addr = INADDR.loopback
+            else
+                C.inet_aton address.host, sockaddr[0].sin_addr
 
         sockaddr[0].sin_port = C.htons address.port
 
