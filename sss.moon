@@ -313,6 +313,7 @@ SO =
 
 --------------------------------------------------------------------------------
 get_sockaddr = (domain, address) ->
+    local sockaddr
     address = tocaddress address if (type address) == "table"
 
     if domain == AF.inet
