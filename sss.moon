@@ -443,10 +443,10 @@ Socket = ffi.metatype "socket_wrapper_t",
             error strerror ffi.errno! if status == -1
 
         getsockopt: (optname) =>
-            value = ffi.new "int[?]", 1
-            status = C.getsockopt @sid, SOL_SOCKET, optname, value, (ffi.sizeof value)
+            optval = ffi.new "int[?]", 1
+            status = C.getsockopt @sid, SOL_SOCKET, optname, optval, (ffi.sizeof optval)
             error strerror ffi.errno! if status == -1
-            (tonumber value[0]) != 0
+            (tonumber optval[0]) != 0
 
 
 socket = (domain=AF.inet, type_=SOCK.stream, protocol=0) ->
