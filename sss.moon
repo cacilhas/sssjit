@@ -329,7 +329,6 @@ get_sockaddr = (domain, address) ->
             C.inet_aton address.host, sockaddr[0].sin_addr
 
         sockaddr[0].sin_port = C.htons address.port
-        (ffi.cast "const struct sockaddr *", sockaddr), ffi.sizeof sockaddr
 
     elseif domain == AF.inet6
         sockaddr = ffi.new "struct sockaddr_in6[?]", 1
@@ -339,10 +338,12 @@ get_sockaddr = (domain, address) ->
         C.inet_pton AF.inet6, host, sockaddr[0].sin6_addr
 
         sockaddr[0].sin6_port = C.htons address.port
-        (ffi.cast "const struct sockaddr *", sockaddr), ffi.sizeof sockaddr
 
     else
-        0, 0
+        sockaddr = nil
+
+    size = if sockaddr == nil then 0 else ffi.sizeof sockaddr
+    (ffi.cast "const struct sockaddr *", sockaddr), size
 
 
 strerror = (errnum) ->
@@ -372,17 +373,15 @@ Socket = ffi.metatype "socket_wrapper_t",
 
         connect: (address) =>
             sockaddr, size = get_sockaddr @domain, address
-            error strerror ffi.errno! if sockaddr == 0
+            error strerror ffi.errno! if sockaddr == nil
             status = C.connect @sid, sockaddr, size
-
             error strerror ffi.errno! if status == -1
             status
 
         bind: (address) =>
             sockaddr, size = get_sockaddr @domain, address
-            error strerror ffi.errno! if sockaddr == 0
+            error strerror ffi.errno! if sockaddr == nil
             status = C.bind @sid, sockaddr, size
-
             error strerror ffi.errno! if status == -1
             status
 
@@ -432,7 +431,7 @@ Socket = ffi.metatype "socket_wrapper_t",
             assert (type host) == "string" and (type port) == "number"
             port = ffi.cast "uint16_t", port
             sockaddr, size = get_sockaddr @domain, address
-            error strerror ffi.errno! if sockaddr == 0
+            error strerror ffi.errno! if sockaddr == nil
             status = sendto @sid, data, #data, 0, sockaddr, size
             error strerror ffi.errno! if status == -1
 
