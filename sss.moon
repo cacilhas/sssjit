@@ -20,8 +20,11 @@ ffi.cdef [[
     typedef __uint32_t in_addr_t;
     typedef __uint32_t socklen_t;
 
-    char *strerror(int);
-    int strcmp(const char *, const char *);
+    struct protoent {
+        char *p_name;
+        char **p_aliases;
+        int p_proto;
+    };
 
     struct in_addr {
         in_addr_t s_addr;
@@ -45,6 +48,11 @@ ffi.cdef [[
         long      tv_sec;
         __int32_t tv_usec;
     };
+
+    char *strerror(int);
+    int strcmp(const char *, const char *);
+    struct protoent *getprotobyname(const char *);
+    void endprotoent();
 
     enum {
         INET_ADDRSTRLEN =  16,
@@ -212,11 +220,19 @@ INADDR =
     --max_local_group: ffi.cast "in_addr_t", C.INADDR_MAX_LOCAL_GROUP
 
 
+findsocketproto = ->
+    pe_p = C.getprotobyname "SOL_SOCKET"
+    if pe_p == nil then 0x0001 else pe_p[0].p_proto
+
+
 SOL_SOCKET = ffi.cast "int", switch ffi.os
-    when "Linux"
-        0x0001
-    else
+    when "Darwin"
         0xffff
+    when "Windows"
+        0xffff
+    else
+        with findsocketproto!
+            C.endprotoent!
 
 
 SOCK =
