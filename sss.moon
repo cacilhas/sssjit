@@ -21,6 +21,7 @@ ffi.cdef [[
     typedef __uint32_t socklen_t;
 
     char *strerror(int);
+    int strcmp(const char *, const char *);
 
     struct in_addr {
         in_addr_t s_addr;
@@ -48,10 +49,6 @@ ffi.cdef [[
     enum {
         INET_ADDRSTRLEN = 16,
         INET6_ADDRSTRLEN = 46,
-    };
-
-    enum {
-        SOL_SOCKET = 0xffff,
     };
 
     enum {
@@ -188,6 +185,11 @@ ffi.cdef [[
     typedef struct {
         int sid, domain, type, protocol;
     } socket_wrapper_t;
+
+    typedef struct {
+        const char host[INET6_ADDRSTRLEN + 1];
+        uint16_t port;
+    } address_t;
 ]]
 
 
@@ -197,6 +199,29 @@ C = ffi.C
 
 
 --------------------------------------------------------------------------------
+INADDR =
+    any: ffi.cast "in_addr_t", C.INADDR_ANY
+    broadcast: ffi.cast "in_addr_t", C.INADDR_BROADCAST
+    loopback: ffi.cast "in_addr_t", C.INADDR_LOOPBACK
+    --unspec_group: ffi.cast "in_addr_t", C.INADDR_UNSPEC_GROUP
+    --allhosts_group: ffi.cast "in_addr_t", C.INADDR_ALLHOSTS_GROUP
+    --allrtrs_group: ffi.cast "in_addr_t", C.INADDR_ALLRTRS_GROUP
+    --allrpts_group: ffi.cast "in_addr_t", C.INADDR_ALLRPTS_GROUP
+    --carp_group: ffi.cast "in_addr_t", C.INADDR_CARP_GROUP
+    --pfsync_group: ffi.cast "in_addr_t", C.INADDR_PFSYNC_GROUP
+    --allmdns_group: ffi.cast "in_addr_t", C.INADDR_ALLMDNS_GROUP
+    --max_local_group: ffi.cast "in_addr_t", C.INADDR_MAX_LOCAL_GROUP
+
+
+SOL_SOCKET = ffi.cast "int", switch ffi.os
+    when "Linux"
+        0x0001
+    when "Darwin"
+        0xffff
+    else
+        0x0000
+
+
 SOCK =
     stream: ffi.cast "int", C.SOCK_STREAM
     dgram: ffi.cast "int", C.SOCK_DGRAM
@@ -287,36 +312,50 @@ SO =
     randomport: ffi.cast "int", C.SO_RANDOMPORT
     np_extensions: ffi.cast "int", C.SO_NP_EXTENSIONS
     numrcvpkt: ffi.cast "int", C.SO_NUMRCVPKT
+
+
 --------------------------------------------------------------------------------
-
-
-get_sockaddr = (domain, host, port) ->
-    port = ffi.cast "uint16_t", port
+get_sockaddr = (domain, address) ->
+    address = tocaddress address if (type address) == "table"
 
     if domain == AF.inet
-        addr = ffi.new "struct sockaddr_in[?]", 1
-        addr[0].sin_family = AF.inet
+        sockaddr = ffi.new "struct sockaddr_in[?]", 1
+        sockaddr[0].sin_family = AF.inet
 
-        if host == "0.0.0.0" or host == "*"
-            addr[0].sin_addr.s_addr = C.INADDR_ANY
+        if (C.strcmp address.host, "0.0.0.0") * (C.strcmp address.host, "*") == 0
+            sockaddr[0].sin_addr.s_addr = INADDR.any
+        elseif (C.strcmp address.host, "broadcast")
+            sockaddr[0].sin_addr.s_addr = INADDR.broadcast
+        elseif (C.strcmp address.host, "loopback")
+            sockaddr[0].sin_addr.s_addr = INADDR.loopback
         else
-            C.inet_aton host, addr[0].sin_addr
+            C.inet_aton address.host, sockaddr[0].sin_addr
 
-        addr[0].sin_port = C.htons port
-        (ffi.cast "const struct sockaddr *", addr), ffi.sizeof addr
+        sockaddr[0].sin_port = C.htons address.port
+        (ffi.cast "const struct sockaddr *", sockaddr), ffi.sizeof sockaddr
 
     elseif domain == AF.inet6
-        addr = ffi.new "struct sockaddr_in6[?]", 1
-        addr[0].sin6_family = AF.inet6
+        sockaddr = ffi.new "struct sockaddr_in6[?]", 1
+        sockaddr[0].sin6_family = AF.inet6
 
-        host = "::" if host == "*"
-        C.inet_pton AF.inet6, host, addr[0].sin6_addr
+        address.host = "::" if (C.strcmp address.host, "*") == 0
+        C.inet_pton AF.inet6, host, sockaddr[0].sin6_addr
 
-        addr[0].sin6_port = C.htons port
-        (ffi.cast "const struct sockaddr *", addr), ffi.sizeof addr
+        sockaddr[0].sin6_port = C.htons address.port
+        (ffi.cast "const struct sockaddr *", sockaddr), ffi.sizeof sockaddr
 
     else
         0, 0
+
+
+tocaddress = (address) ->
+    assert (type address.host) == "string" and (type address.port) == "number"
+    ffi.new "address_t", address
+
+
+toladdress = (address) ->
+    host: ffi.string address.host
+    port: tonumber address.port
 
 
 Socket = ffi.metatype "socket_wrapper_t",
@@ -329,22 +368,18 @@ Socket = ffi.metatype "socket_wrapper_t",
                 C.close(@sid)
                 @sid = 0
 
-        connect: (host, port) =>
-            assert (type host) == "string" and (type port) == "number"
-            port = ffi.cast "uint16_t", port
-            addr, size = get_sockaddr @domain, host, port
-            error C.strerror ffi.errno! if addr == 0
-            status = C.connect @sid, addr, size
+        connect: (address) =>
+            sockaddr, size = get_sockaddr @domain, address
+            error C.strerror ffi.errno! if sockaddr == 0
+            status = C.connect @sid, sockaddr, size
 
             error C.strerror ffi.errno! if status == -1
             status
 
-        bind: (host, port) =>
-            assert (type host) == "string" and (type port) == "number"
-            port = ffi.cast "uint16_t", port
-            addr, size = get_sockaddr @domain, host, port
-            error C.strerror ffi.errno! if addr == 0
-            status = C.bind @sid, addr, size
+        bind: (address) =>
+            sockaddr, size = get_sockaddr @domain, address
+            error C.strerror ffi.errno! if sockaddr == 0
+            status = C.bind @sid, sockaddr, size
 
             error C.strerror ffi.errno! if status == -1
             status
@@ -354,25 +389,25 @@ Socket = ffi.metatype "socket_wrapper_t",
             error C.strerror ffi.errno! if status == -1
 
         accept: =>
-            addr = ffi.new "struct sockaddr[?]", 1
+            sockaddr = ffi.new "struct sockaddr[?]", 1
             sin_size = ffi.new "socklen_t[?]", 1
-            sin_size[0] = ffi.sizeof addr
-            sid = C.accept @sid, addr, sin_size
+            sin_size[0] = ffi.sizeof sockaddr
+            sid = C.accept @sid, sockaddr, sin_size
             error C.strerror ffi.errno! if sid == -1
 
             if @domain == AF.inet6
-                address_p = ffi.cast "struct sockaddr_in6 *", addr
-                aux = ffi.new "char[?]", C.INET6_ADDRSTRLEN
-                C.inet_ntop AF.inet6, address_p[0].sin6_addr, aux, C.INET6_ADDRSTRLEN
-                host = ffi.string aux
-                port = tonumber C.ntohs address_p[0].sin6_port
+                sockaddr_p = ffi.cast "struct sockaddr_in6 *", sockaddr
+                host = ffi.new "char[?]", C.INET6_ADDRSTRLEN
+                C.inet_ntop AF.inet6, sockaddr_p[0].sin6_addr, host, C.INET6_ADDRSTRLEN
+                port = C.ntohs sockaddr_p[0].sin6_port
 
             else
-                address_p = ffi.cast "struct sockaddr_in *", addr
-                host = ffi.string C.inet_ntoa address_p[0].sin_addr
-                port = tonumber C.ntohs address_p[0].sin_port
+                sockaddr_p = ffi.cast "struct sockaddr_in *", sockaddr
+                host = C.inet_ntoa sockaddr_p[0].sin_addr
+                port = C.ntohs sockaddr_p[0].sin_port
 
-            (Socket sid, @domain, @type, @protocol), host, port
+            address = tocaddress {:host, :port}
+            (Socket sid, @domain, @type, @protocol), address
 
         recv: (bsize=1024) =>
             buf = ffi.new "char[?]", bsize + 1
@@ -391,23 +426,23 @@ Socket = ffi.metatype "socket_wrapper_t",
             status = C.send @sid, data, #data, 0
             error C.strerror ffi.errno! if status == -1
 
-        sendto: (data, host, port) =>
+        sendto: (data, address) =>
             assert (type host) == "string" and (type port) == "number"
             port = ffi.cast "uint16_t", port
-            addr, size = get_sockaddr @domain, host, port
-            error C.strerror ffi.errno! if addr == 0
-            status = sendto @sid, data, #data, 0, addr, size
+            sockaddr, size = get_sockaddr @domain, address
+            error C.strerror ffi.errno! if sockaddr == 0
+            status = sendto @sid, data, #data, 0, sockaddr, size
             error C.strerror ffi.errno! if status == -1
 
         setsockopt: (optname, value=true) =>
             aux = ffi.new "int[?]", 1
             aux[0] = ffi.cast "int", (if value then 1 else 0)
-            status = C.setsockopt @sid, C.SOL_SOCKET, optname, aux, (ffi.sizeof aux)
+            status = C.setsockopt @sid, SOL_SOCKET, optname, aux, (ffi.sizeof aux)
             error C.strerror ffi.errno! if status == -1
 
         getsockopt: (optname) =>
             value = ffi.new "int[?]", 1
-            status = C.getsockopt @sid, C.SOL_SOCKET, optname, value, (ffi.sizeof value)
+            status = C.getsockopt @sid, SOL_SOCKET, optname, value, (ffi.sizeof value)
             error C.strerror ffi.errno! if status == -1
             tonumber value[0]
 
@@ -428,4 +463,6 @@ socket = (domain=AF.inet, type_=SOCK.stream, protocol=0) ->
     :AF
     :SO
     :socket
+    :tocaddress
+    :toladdress
 }

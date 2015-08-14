@@ -5,7 +5,9 @@ sss = (loadfile "sss.moon")!
 
 s = sss.socket!
 s\setsockopt sss.SO.reuseaddr
-s\bind "*", 32000
+s\bind
+    host: "*"
+    port: 32000
 s\listen!
 
 while true
