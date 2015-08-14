@@ -17,7 +17,7 @@ The `socket` function receives three parameters:
 
 1. domain: from `sss.AF` table, default `sss.AF.inet`
 2. type: from `sss.SOCK` table, default `sss.SOCK.stream`
-3. protocol: integer or string, see `/etc/protocols`, default `0`
+3. protocol: integer or string, see `/etc/protocols`, default 0
 
 The socket object accepts the following messages:
 
@@ -59,6 +59,14 @@ Another useful functions:
 * `sss.AF`: contains the socket address families.
 * `sss.SOCK`: contains the socket types.
 * `sss.SO`: contains the socket options.
+
+To see the content:
+
+```
+#!moonscript
+
+table.foreach sss.AF, print
+```
 
 
 ## License
