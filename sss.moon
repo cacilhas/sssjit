@@ -52,7 +52,6 @@ ffi.cdef [[
     char *strerror(int);
     int strcmp(const char *, const char *);
     struct protoent *getprotobyname(const char *);
-    void endprotoent();
 
     enum {
         INET_ADDRSTRLEN =  16,
@@ -220,9 +219,9 @@ INADDR =
     --max_local_group: ffi.cast "in_addr_t", C.INADDR_MAX_LOCAL_GROUP
 
 
-findsocketproto = ->
-    pe_p = C.getprotobyname "SOL_SOCKET"
-    if pe_p == nil then 0x0001 else pe_p[0].p_proto
+getprotobyname = (name) ->
+    pe_p = C.getprotobyname name
+    if pe_p == nil then nil else pe_p[0].p_proto
 
 
 SOL_SOCKET = ffi.cast "int", switch ffi.os
@@ -231,8 +230,11 @@ SOL_SOCKET = ffi.cast "int", switch ffi.os
     when "Windows"
         0xffff
     else
-        with findsocketproto!
-            C.endprotoent!
+        proto = getprotobyname "SOL_SOCKET"
+        if proto == nil then 0x0001 else proto
+
+
+IP_PROTO = getprotobyname "ip"
 
 
 SOCK =
@@ -465,10 +467,21 @@ Socket = ffi.metatype "socket_wrapper_t",
             (tonumber optval[0]) != 0
 
 
-socket = (domain=AF.inet, type_=SOCK.stream, protocol=0) ->
-    protocol = ffi.cast "int", protocol
-    sid = C.socket domain, type_, protocol
-    Socket sid, domain, type_, protocol
+socket = (domain=AF.inet, type_=SOCK.stream, protocol) ->
+    local p_proto
+    switch type protocol
+        when "number"
+            p_proto = ffi.cast "int", protocol
+        when "string"
+            p_proto = getprotobyname protocol
+            error "unknown protocol: #{protocol}" if p_proto == nil
+        when "cdata"
+            error "unknown protocol: #{protocol}" if not (tostring protocol)\match "^cdata<int>"
+            p_proto = protocol
+        else
+            p_proto = IP_PROTO
+    sid = C.socket domain, type_, p_proto
+    Socket sid, domain, type_, p_proto
 
 
 --------------------------------------------------------------------------------
