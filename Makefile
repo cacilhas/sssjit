@@ -1,20 +1,21 @@
 LUAJIT= luajit
 SHARE_DIR := $(shell $(LUAJIT) find_lua_path.lua)
-LUA := LUA_PATH="./?.lua;$$LUA_PATH" $(LUAJIT)
+MOON= moon
 CC= moonc
 MD= mkdir -p
-DEST= $(SHARE_DIR)/
+DEST= $(SHARE_DIR)/sss
 INSTALL= cp -rf
 RM= rm -rf
 
-SRC= sss.moon
+SRC= $(wildcard sss/*.moon)
 TARGET= $(SRC:.moon=.lua)
+
 
 #-------------------------------------------------------------------------------
 all: $(TARGET)
 
 
-.PHONY: install uninstall clean
+.PHONY: install uninstall clean test
 
 
 %.lua: %.moon
@@ -26,6 +27,7 @@ $(DEST):
 
 
 install: $(TARGET) $(DEST)
+	$(MD) $(DEST)
 	$(INSTALL) $?
 
 
@@ -34,4 +36,8 @@ uninstall:
 
 
 clean:
-	$(RM) $(TARGET) $(TESTS)
+	$(RM) $(TARGET)
+
+
+test: echo.moon $(TARGET)
+	$(MOON) $<
