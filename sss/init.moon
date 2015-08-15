@@ -131,9 +131,10 @@ tocaddress = (address) ->
     ffi.new "address_t", address
 
 
-toladdress = (address) ->
+toladdress = (address) -> {
     host: ffi.string address.host
     port: tonumber address.port
+}
 
 
 Socket = ffi.metatype "socket_wrapper_t",
@@ -231,7 +232,8 @@ Socket = ffi.metatype "socket_wrapper_t",
         getsockopt: (optname) =>
             -- TODO: get other value types
             optval = ffi.new "int[?]", 1
-            optlen = ffi.sizeof "int"
+            optlen = ffi.new "socklen_t[?]", 1
+            optlen[0] = ffi.sizeof "int"
             status = C.getsockopt @sid, SOL_SOCKET, optname, optval, optlen
             error strerror ffi.errno! if status == -1
             tonumber optval[0]
