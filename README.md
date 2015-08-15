@@ -14,7 +14,7 @@ sh$ sudo make install
 Before `make install`, you can check if it’s ok by running:
 
 ```
-sh$ ./echo.moon
+sh$ make test
 ```
 
 And:
