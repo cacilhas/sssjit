@@ -1,7 +1,5 @@
-#!/usr/bin/env moon
-
-import loadfile from assert require "moonscript.base"
-sss = (loadfile "sss.moon")!
+package.path = "?.lua;?/init.lua;#{package.path}"
+sss = assert require "sss"
 
 s = sss.socket!
 s\setsockopt sss.SO.reuseaddr
