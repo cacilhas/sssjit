@@ -128,7 +128,7 @@ luatotimeval = (tv, value) ->
 --------------------------------------------------------------------------------
 tocaddress = (address) ->
     assert (type address) == "table"
-    ffi.new "address_t", address
+    ffi.new "struct netaddress", address
 
 
 toladdress = (address) -> {
@@ -137,7 +137,7 @@ toladdress = (address) -> {
 }
 
 
-Socket = ffi.metatype "socket_wrapper_t",
+Socket = ffi.metatype "struct socket_wrapper",
     __gc: =>
         @\close!
 

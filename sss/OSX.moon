@@ -109,14 +109,14 @@ ffi.cdef [[
     int setsockopt(int, int, int, const void *, socklen_t);
 
 
-    typedef struct {
+    struct socket_wrapper {
         int sid, domain, type, protocol;
-    } socket_wrapper_t;
+    };
 
-    typedef struct {
+    struct netaddress {
         const char host[INET6_ADDRSTRLEN + 1];
         uint16_t   port;
-    } address_t;
+    };
 
     enum {
         AF_UNSPEC =     0,

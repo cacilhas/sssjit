@@ -49,7 +49,7 @@ do  -- C address
     address = sss.tocaddress
         host: "127.0.0.1"
         port: 32000
-    assert (tostring address)\match "^cdata<struct "
+    assert (tostring address)\match "^cdata<struct netaddress>"
     assert (ffi.string address.host) == "127.0.0.1"
     assert (tonumber address.port) == 32000
 
