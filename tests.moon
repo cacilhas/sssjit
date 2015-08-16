@@ -114,8 +114,11 @@ do  -- socket methods
             assert s.send
             assert s.recv
             assert s.sendto
+            assert s.setopt
+            assert s.getopt
+            assert s.reuseaddr
             assert s.settimeout
-            assert s.gettimeout
+            assert s.broadcast
         finally: ->
             s\close!
             assert s.sid == 0
@@ -124,12 +127,25 @@ do  -- socket methods
     s = sss.socket!
     try
         do: ->
-            assert (s\getsockopt sss.SO.reuseaddr) == 0
-            s\setsockopt sss.SO.reuseaddr, 1
-            assert (s\getsockopt sss.SO.reuseaddr) == 1
+            s\reuseaddr!
         finally: ->
             s\close!
 
+    testing "sss.socket: settimeout"
+    s = sss.socket!
+    try
+        do: ->
+            s\settimeout {snd: 1.125, rcv: 5}
+        finally: ->
+            s\close!
+
+    testing "sss.socket: broadcast"
+    s = sss.socket sss.AF.inet, sss.SOCK.dgram, "udp"
+    try
+        do: ->
+            s\broadcast!
+        finally: ->
+            s\close!
 
 --------------------------------------------------------------------------------
 print "all tests have passed"

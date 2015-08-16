@@ -210,33 +210,26 @@ Socket = ffi.metatype "socket_wrapper_t",
             status = sendto @sid, data, #data, 0, sockaddr, size
             error strerror ffi.errno! if status == -1
 
-        setsockopt: (optname, value=1) =>
-            local optval, optlen
-            switch type(value)
-                when "number"
-                    optval = ffi.new "int[?]", 1
-                    optval[0] = value
-                    optlen = ffi.sizeof "int"
-                when "cdata"
-                    optval = value
-                    optlen = ffi.sizeof optval
-                when "string"
-                    optval = ffi.cast "char *", value
-                    optlen = #value
-                else
-                    error "unknown value: #{value}"
-
-            status = C.setsockopt @sid, SOL_SOCKET, optname, optval, optlen
+        setopt: (optname, optval) =>
+            assert type(optval) == "cdata"
+            optlen = ffi.sizeof optval
+            ovtype = ffi.typeof "$ *", optval
+            optval_p = ffi.cast ovtype, (0 + (tostring optval)\match": (0x.+)$")
+            status = C.setsockopt @sid, SOL_SOCKET, optname, optval_p, optlen
             error strerror ffi.errno! if status == -1
 
-        getsockopt: (optname) =>
-            -- TODO: get other value types
-            optval = ffi.new "int[?]", 1
-            optlen = ffi.new "socklen_t[?]", 1
-            optlen[0] = ffi.sizeof "int"
-            status = C.getsockopt @sid, SOL_SOCKET, optname, optval, optlen
-            error strerror ffi.errno! if status == -1
-            tonumber optval[0]
+        getopt: (optname) =>
+            optlen = ffi.new "socklen_t"
+            optlen_p = ffi.cast "socklen_t", optlen
+            optval_p = ffi.new "void *"
+            status = C.getsockopt @sid, SOL_SOCKET, optname, optval_p, optlen_p
+            optval_p = ffi.cast "unsigned char *", optval_p
+            optval = ffi.new "unsigned char[?]", optlen
+            optval[i] = optval_p[0][i] for i = 0, optlen - 1
+            optval, optlen
+
+        reuseaddr: =>
+            @\setopt SO.reuseaddr, (ffi.cast "int", 1)
 
         settimeout: (param) =>
             local snd, rcv
@@ -253,22 +246,16 @@ Socket = ffi.metatype "socket_wrapper_t",
             if snd
                 tval = ffi.new "struct timeval[?]", 1
                 luatotimeval tval[0], snd
-                @\setsockopt SO.sndtimeo, tval
+                status = C.setsockopt @sid, SOL_SOCKET, SO.sndtimeo, tval, ffi.sizeof tval
+                error strerror ffi.errno! if status == -1
             if rcv
                 tval = ffi.new "struct timeval[?]", 1
                 luatotimeval tval[0], rcv
-                @\setsockopt SO.rcvtimeo, tval
+                status = C.setsockopt @sid, SOL_SOCKET, SO.rcvtimeo, tval, ffi.sizeof tval
+                error strerror ffi.errno! if status == -1
 
-        gettimeout: =>
-            tval_p = ffi.new "struct timeval[?]", 1
-            optlen = ffi.sizeof "struct timeval"
-            status = C.getsockopt, @sid, SOL_SOCKET, SO.sndtimeo, tval_p, optlen
-            error sterror ffi.errno! if status == -1
-            snd = timevaltolua tval_p[0]
-            status = C.getsockopt, @sid, SOL_SOCKET, SO.rcvtimeo, tval_p, optlen
-            error sterror ffi.errno! if status == -1
-            rcv = timevaltolua tval_p[0]
-            {send: snd, receive: rcv}
+        broadcast: =>
+            @\setopt SO.broadcast, (ffi.cast "int", 1)
 
 
 socket = (domain=AF.inet, type_=SOCK.stream, protocol) ->
