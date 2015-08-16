@@ -73,7 +73,7 @@ The socket object accepts the following messages:
 * `socket.setopt name, value` – sets socket option, value must be a `cdata`.
 
 * `socket.getopt name` – gets socket option value, returns
-  `cdata<unsgined char [?]` and the length in bytes.
+  `cdata<unsgined char[?]>` and the length in bytes.
 
 * `socket.settimeout tmo` – sets the receiving and/or sending timeout. `tmo`
   can be a number, or a table containing the keys `send` and `receive`.
