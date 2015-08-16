@@ -12,10 +12,10 @@ TARGET= $(SRC:.moon=.lua)
 
 
 #-------------------------------------------------------------------------------
+.PHONY: install uninstall clean test echoserver
+
+
 all: $(TARGET)
-
-
-.PHONY: install uninstall clean test
 
 
 %.lua: %.moon
@@ -39,5 +39,9 @@ clean:
 	$(RM) $(TARGET)
 
 
-test: echo.moon $(TARGET)
+test: tests.moon $(TARGET)
+	$(MOON) $<
+
+
+echoserver: echo.moon $(TARGET)
 	$(MOON) $<

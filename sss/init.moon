@@ -4,7 +4,7 @@ import floor from math
 local *
 
 
-_VERSION = "1.0b"
+_VERSION = "1.0b2"
 _DESCRIPTION = "LuaJIT-powered Simple Stupid Socket"
 _AUTHOR = "ℜodrigo Arĥimedeς ℳontegasppa ℭacilhας <batalema@cacilhas.info>"
 _LICENSE = "BSD-3 Clausule"
@@ -20,11 +20,6 @@ INADDR =
     any:       ffi.cast "in_addr_t", C.INADDR_ANY
     broadcast: ffi.cast "in_addr_t", C.INADDR_BROADCAST
     loopback:  ffi.cast "in_addr_t", C.INADDR_LOOPBACK
-
-
-getprotobyname = (name) ->
-    pe_p = C.getprotobyname name
-    if pe_p == nil then nil else pe_p[0].p_proto
 
 
 SOL_SOCKET = ffi.cast "int", C.SOL_SOCKET
@@ -77,7 +72,12 @@ SO =
 
 
 --------------------------------------------------------------------------------
-get_sockaddr = (domain, address) ->
+getprotobyname = (name) ->
+    pe_p = C.getprotobyname name
+    if pe_p == nil then nil else pe_p[0].p_proto
+
+
+getsockaddr = (domain, address) ->
     address = tocaddress address if (type address) == "table"
     sockaddr = nil
 
@@ -116,18 +116,28 @@ strerror = (errnum) ->
     ffi.string C.strerror errnum
 
 
+timevaltolua = (tv) ->
+    (tonumber tv.tv_sec) + (tonumber tv.tv_usec) / 1000000
+
+
+luatotimeval = (tv, value) ->
+    tv.tv_sec = floor value
+    tv.tv_usec = floor (value * 1000000) % 1000000
+
+
 --------------------------------------------------------------------------------
 tocaddress = (address) ->
     assert (type address) == "table"
-    ffi.new "address_t", address
+    ffi.new "struct netaddress", address
 
 
-toladdress = (address) ->
+toladdress = (address) -> {
     host: ffi.string address.host
     port: tonumber address.port
+}
 
 
-Socket = ffi.metatype "socket_wrapper_t",
+Socket = ffi.metatype "struct socket_wrapper",
     __gc: =>
         @\close!
 
@@ -138,14 +148,14 @@ Socket = ffi.metatype "socket_wrapper_t",
                 @sid = 0
 
         connect: (address) =>
-            sockaddr, size = get_sockaddr @domain, address
+            sockaddr, size = getsockaddr @domain, address
             error strerror ffi.errno! if sockaddr == nil
             status = C.connect @sid, sockaddr, size
             error strerror ffi.errno! if status == -1
             status
 
         bind: (address) =>
-            sockaddr, size = get_sockaddr @domain, address
+            sockaddr, size = getsockaddr @domain, address
             error strerror ffi.errno! if sockaddr == nil
             status = C.bind @sid, sockaddr, size
             error strerror ffi.errno! if status == -1
@@ -195,37 +205,33 @@ Socket = ffi.metatype "socket_wrapper_t",
 
         sendto: (data, address) =>
             port = ffi.cast "uint16_t", port
-            sockaddr, size = get_sockaddr @domain, address
+            sockaddr, size = getsockaddr @domain, address
             error strerror ffi.errno! if sockaddr == nil
             status = sendto @sid, data, #data, 0, sockaddr, size
             error strerror ffi.errno! if status == -1
 
-        setsockopt: (optname, value=1) =>
-            local optval
-            switch type(value)
-                when "number"
-                    optval = ffi.new "int[?]", 1
-                    optval[0] = value
-                when "cdata"
-                    optval = value
-                when "string"
-                    optval = value
-                else
-                    error "unknown value: #{value}"
-
-            status = C.setsockopt @sid, SOL_SOCKET, optname, optval, (ffi.sizeof optval)
+        setopt: (optname, optval) =>
+            assert type(optval) == "cdata"
+            optlen = ffi.sizeof optval
+            ovtype = ffi.typeof "$ *", optval
+            optval_p = ffi.cast ovtype, (0 + (tostring optval)\match": (0x.+)$")
+            status = C.setsockopt @sid, SOL_SOCKET, optname, optval_p, optlen
             error strerror ffi.errno! if status == -1
 
-        getsockopt: (optname) =>
-            -- TODO: get other value types
-            optval = ffi.new "int[?]", 1
-            status = C.getsockopt @sid, SOL_SOCKET, optname, optval, (ffi.sizeof optval)
-            error strerror ffi.errno! if status == -1
-            tonumber optval[0]
+        getopt: (optname) =>
+            optlen = ffi.new "socklen_t"
+            optlen_p = ffi.cast "socklen_t", optlen
+            optval_p = ffi.new "void *"
+            status = C.getsockopt @sid, SOL_SOCKET, optname, optval_p, optlen_p
+            optval_p = ffi.cast "unsigned char *", optval_p
+            optval = ffi.new "unsigned char[?]", optlen
+            optval[i] = optval_p[0][i] for i = 0, optlen - 1
+            optval, optlen
+
+        reuseaddr: =>
+            @\setopt SO.reuseaddr, (ffi.cast "int", 1)
 
         settimeout: (param) =>
-            -- TODO: gettimeout
-
             local snd, rcv
             switch (type param)
                 when "number"
@@ -238,15 +244,18 @@ Socket = ffi.metatype "socket_wrapper_t",
                     error "unknown parameter #{param}"
 
             if snd
-                tval = ffi.new "struct timeval",
-                    tv_sec: floor snd
-                    tv_usec: floor (snd * 1000000) % 1000000
-                @\setsockopt SO.sndtimeo, tval
+                tval = ffi.new "struct timeval[?]", 1
+                luatotimeval tval[0], snd
+                status = C.setsockopt @sid, SOL_SOCKET, SO.sndtimeo, tval, ffi.sizeof tval
+                error strerror ffi.errno! if status == -1
             if rcv
-                tval = ffi.new "struct timeval",
-                    tv_sec: floor rcv
-                    tv_usec: floor (rcv * 1000000) % 1000000
-                @\setsockopt SO.rcvtimeo, tval
+                tval = ffi.new "struct timeval[?]", 1
+                luatotimeval tval[0], rcv
+                status = C.setsockopt @sid, SOL_SOCKET, SO.rcvtimeo, tval, ffi.sizeof tval
+                error strerror ffi.errno! if status == -1
+
+        broadcast: =>
+            @\setopt SO.broadcast, (ffi.cast "int", 1)
 
 
 socket = (domain=AF.inet, type_=SOCK.stream, protocol) ->
