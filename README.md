@@ -8,13 +8,14 @@ A reimplementation of [SSS](https://bitbucket.org/cacilhas/sss) powered by
 
 ```
 sh$ make
+sh$ make test
 sh$ sudo make install
 ```
 
 Before `make install`, you can check if it’s ok by running:
 
 ```
-sh$ make test
+sh$ make echoserver
 ```
 
 And:
@@ -58,7 +59,8 @@ The socket object accepts the following messages:
 
 * `socket.listen backlog` – like C `listen` function.
 
-* `socket.accept!` – accepts new connections, returns the client socket and the C address.
+* `socket.accept!` – accepts new connections, returns the client socket and the
+  C address.
 
 * `socket.receive!` – receives and returns one line from remote peer.
 
@@ -68,11 +70,13 @@ The socket object accepts the following messages:
 
 * `socket.sendto data, address` – like C `sendto` function.
 
-* `socket.setsockopt name, value` – sets socket option, default value is 1.
+* `socket.setopt name, value` – sets socket option, value must be a `cdata`.
 
-* `socket.getsockopt name` – gets socket option value, by now only integer values.
+* `socket.getopt name` – gets socket option value, returns
+  `cdata<unsgined char [?]` and the length in bytes.
 
-* `socket.settimeout tmo` – sets the receiving and/or sending timeout. `tmo` can be a number, or a table containing the keys `send` and `receive`.
+* `socket.settimeout tmo` – sets the receiving and/or sending timeout. `tmo`
+  can be a number, or a table containing the keys `send` and `receive`.
 
 
 Another useful functions:
@@ -106,7 +110,7 @@ table.foreach sss.AF, print
 sss = assert require "sss"
 
 s = sss.socket!
-s\setsockopt sss.SO.reuseaddr
+s\reuseaddr!
 s\bind
     host: "*"
     port: 32000

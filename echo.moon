@@ -2,7 +2,7 @@ package.path = "?.lua;?/init.lua;#{package.path}"
 sss = assert require "sss"
 
 s = sss.socket!
-s\setsockopt sss.SO.reuseaddr
+s\reuseaddr!
 s\bind
     host: "*"
     port: 32000
