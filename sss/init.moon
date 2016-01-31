@@ -1,7 +1,6 @@
+local *
 ffi = assert require "ffi"
 import floor from math
-
-local *
 
 
 _VERSION = "1.0b2"
