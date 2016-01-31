@@ -1,5 +1,5 @@
-LUAJIT= luajit
-SHARE_DIR := $(shell $(LUAJIT) find_lua_path.lua)
+LUA= luajit
+SHARE_DIR := $(shell $(LUA) find_lua_path.lua)
 MOON= moon
 CC= moonc
 MD= mkdir -p
