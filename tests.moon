@@ -7,11 +7,7 @@ sss = assert require "sss"
 
 
 try = (t) ->
-    ok, response = pcall ->
-        if t.catch
-            xpcall(t.do, t.catch)
-        else
-            t.do!
+    ok, response = pcall -> if t.catch then xpcall t.do, t.catch else t.do!
     t.finally! if t.finally
     error response unless ok
     response
@@ -21,19 +17,21 @@ try = (t) ->
 TestSSS =
 
     test_socket: =>
-        unit.assertStrContains (tostring value), "cdata<int>" for _, value in pairs sss.SOCK
-        unit.assertNotNil sss.SOCK.stream
-        unit.assertNotNil sss.SOCK.dgram
-        unit.assertNotNil sss.SOCK.raw
+        with unit
+            .assertStrContains (tostring value), "cdata<int>" for _, value in pairs sss.SOCK
+            .assertNotNil sss.SOCK.stream
+            .assertNotNil sss.SOCK.dgram
+            .assertNotNil sss.SOCK.raw
 
     test_af: =>
-        unit.assertStrContains (tostring value), "cdata<unsigned char>" for _, value in pairs sss.AF
-        unit.assertNotNil sss.AF.unspec
-        unit.assertNotNil sss.AF.local
-        unit.assertNotNil sss.AF.inet
-        unit.assertNotNil sss.AF.inet6
-        unit.assertNotNil sss.AF.ipx
-        unit.assertNotNil sss.AF.netbios
+        with unit
+            .assertStrContains (tostring value), "cdata<unsigned char>" for _, value in pairs sss.AF
+            .assertNotNil sss.AF.unspec
+            .assertNotNil sss.AF.local
+            .assertNotNil sss.AF.inet
+            .assertNotNil sss.AF.inet6
+            .assertNotNil sss.AF.ipx
+            .assertNotNil sss.AF.netbios
 
     test_so: =>
         unit.assertStrContains (tostring value), "cdata<int>" for _, value in pairs sss.SO
@@ -42,14 +40,16 @@ TestSSS =
         address = sss.tocaddress
             host: "127.0.0.1"
             port: 32000
-        unit.assertStrContains (tostring address), "cdata<struct netaddress>"
-        unit.assertEquals (ffi.string address.host), "127.0.0.1"
-        unit.assertEquals (tonumber address.port), 32000
+        with unit
+            .assertStrContains (tostring address), "cdata<struct netaddress>"
+            .assertEquals (ffi.string address.host), "127.0.0.1"
+            .assertEquals (tonumber address.port), 32000
 
         address = sss.toladdress address
-        unit.assertEquals (type address), "table"
-        unit.assertEquals address.host, "127.0.0.1"
-        unit.assertEquals address.port, 32000
+        with unit
+            .assertEquals (type address), "table"
+            .assertEquals address.host, "127.0.0.1"
+            .assertEquals address.port, 32000
 
 
 --------------------------------------------------------------------------------
@@ -59,11 +59,12 @@ TestSocket =
         s = sss.socket!
         try
             do: ->
-                unit.assertStrContains (tostring s), "cdata<struct socket_wrapper>"
-                unit.assertEquals (type s.sid), "number"
-                unit.assertEquals s.domain, tonumber sss.AF.inet
-                unit.assertEquals s.type, tonumber sss.SOCK.stream
-                unit.assertEquals s.protocol, 0
+                with unit
+                    .assertStrContains (tostring s), "cdata<struct socket_wrapper>"
+                    .assertEquals (type s.sid), "number"
+                    .assertEquals s.domain, tonumber sss.AF.inet
+                    .assertEquals s.type, tonumber sss.SOCK.stream
+                    .assertEquals s.protocol, 0
             finally: ->
                 s\close!
 
@@ -71,11 +72,12 @@ TestSocket =
         s = sss.socket sss.AF.local, sss.SOCK.raw
         try
             do: ->
-                unit.assertStrContains (tostring s), "cdata<struct socket_wrapper>"
-                unit.assertEquals (type s.sid), "number"
-                unit.assertEquals s.domain, tonumber sss.AF.local
-                unit.assertEquals s.type, tonumber sss.SOCK.raw
-                unit.assertEquals s.protocol, 0
+                with unit
+                    .assertStrContains (tostring s), "cdata<struct socket_wrapper>"
+                    .assertEquals (type s.sid), "number"
+                    .assertEquals s.domain, tonumber sss.AF.local
+                    .assertEquals s.type, tonumber sss.SOCK.raw
+                    .assertEquals s.protocol, 0
             finally: ->
                 s\close!
 
@@ -83,12 +85,13 @@ TestSocket =
         s = sss.socket sss.AF.inet, sss.SOCK.dgram, "udp"
         try
             do: ->
-                unit.assertStrContains (tostring s), "cdata<struct socket_wrapper>"
-                unit.assertEquals (type s.sid), "number"
-                unit.assertEquals s.domain, tonumber sss.AF.inet
-                unit.assertEquals s.type, tonumber sss.SOCK.dgram
-                unit.assertEquals (type s.protocol), "number"
-                unit.assertTrue s.protocol > 0
+                with unit
+                    .assertStrContains (tostring s), "cdata<struct socket_wrapper>"
+                    .assertEquals (type s.sid), "number"
+                    .assertEquals s.domain, tonumber sss.AF.inet
+                    .assertEquals s.type, tonumber sss.SOCK.dgram
+                    .assertEquals (type s.protocol), "number"
+                    .assertTrue s.protocol > 0
             finally: ->
                 s\close!
 
@@ -96,19 +99,20 @@ TestSocket =
         s = sss.socket!
         try
             do: ->
-                unit.assertNotNil s.connect
-                unit.assertNotNil s.bind
-                unit.assertNotNil s.listen
-                unit.assertNotNil s.accept
-                unit.assertNotNil s.receive
-                unit.assertNotNil s.send
-                unit.assertNotNil s.recv
-                unit.assertNotNil s.sendto
-                unit.assertNotNil s.setopt
-                unit.assertNotNil s.getopt
-                unit.assertNotNil s.reuseaddr
-                unit.assertNotNil s.settimeout
-                unit.assertNotNil s.broadcast
+                with aNotNil = unit.assertNotNil
+                    aNotNil s.connect
+                    aNotNil s.bind
+                    aNotNil s.listen
+                    aNotNil s.accept
+                    aNotNil s.receive
+                    aNotNil s.send
+                    aNotNil s.recv
+                    aNotNil s.sendto
+                    aNotNil s.setopt
+                    aNotNil s.getopt
+                    aNotNil s.reuseaddr
+                    aNotNil s.settimeout
+                    aNotNil s.broadcast
             finally: ->
                 s\close!
                 assert s.sid == 0
@@ -136,6 +140,7 @@ TestSocket =
                 s\broadcast!
             finally: ->
                 s\close!
+
 
 --------------------------------------------------------------------------------
 os.exit unit.LuaUnit.run!

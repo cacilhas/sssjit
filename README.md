@@ -109,18 +109,18 @@ table.foreach sss.AF, print
 
 sss = assert require "sss"
 
-s = sss.socket!
-s\reuseaddr!
-s\bind
-    host: "*"
-    port: 32000
-s\listen!
+s = with sss.socket!
+    \reuseaddr!
+    \bind
+        host: "*"
+        port: 32000
+    \listen!
 
 while true
-    c = s\accept!
-    got = c\receive!
-    c\send got
-    c\close!
+    with s\accept!
+        got = \receive!
+        \send got
+        \close!
 ```
 
 

@@ -143,19 +143,19 @@ Socket = ffi.metatype "struct socket_wrapper",
     __index:
         close: =>
             if @sid != 0
-                C.close(@sid)
+                C.close @sid
                 @sid = 0
 
         connect: (address) =>
             sockaddr, size = getsockaddr @domain, address
-            error strerror ffi.errno! if sockaddr == nil
+            error strerror ffi.errno! unless sockaddr
             status = C.connect @sid, sockaddr, size
             error strerror ffi.errno! if status == -1
             status
 
         bind: (address) =>
             sockaddr, size = getsockaddr @domain, address
-            error strerror ffi.errno! if sockaddr == nil
+            error strerror ffi.errno! unless sockaddr
             status = C.bind @sid, sockaddr, size
             error strerror ffi.errno! if status == -1
             status
@@ -163,6 +163,7 @@ Socket = ffi.metatype "struct socket_wrapper",
         listen: (backlog=1) =>
             status = C.listen @sid, backlog
             error strerror ffi.errno! if status == -1
+            status
 
         accept: =>
             sockaddr = ffi.new "struct sockaddr[?]", 1
@@ -201,6 +202,7 @@ Socket = ffi.metatype "struct socket_wrapper",
         send: (data) =>
             status = C.send @sid, data, #data, 0
             error strerror ffi.errno! if status == -1
+            status
 
         sendto: (data, address) =>
             port = ffi.cast "uint16_t", port
@@ -208,6 +210,7 @@ Socket = ffi.metatype "struct socket_wrapper",
             error strerror ffi.errno! if sockaddr == nil
             status = sendto @sid, data, #data, 0, sockaddr, size
             error strerror ffi.errno! if status == -1
+            status
 
         setopt: (optname, optval) =>
             assert type(optval) == "cdata"
@@ -216,6 +219,7 @@ Socket = ffi.metatype "struct socket_wrapper",
             optval_p = ffi.cast ovtype, (0 + (tostring optval)\match": (0x.+)$")
             status = C.setsockopt @sid, SOL_SOCKET, optname, optval_p, optlen
             error strerror ffi.errno! if status == -1
+            status
 
         getopt: (optname) =>
             optlen = ffi.new "socklen_t"
@@ -232,7 +236,7 @@ Socket = ffi.metatype "struct socket_wrapper",
 
         settimeout: (param) =>
             local snd, rcv
-            switch (type param)
+            switch type param
                 when "number"
                     snd = param
                     rcv = param
@@ -242,16 +246,18 @@ Socket = ffi.metatype "struct socket_wrapper",
                 else
                     error "unknown parameter #{param}"
 
+            status = {}
             if snd
                 tval = ffi.new "struct timeval[?]", 1
                 luatotimeval tval[0], snd
-                status = C.setsockopt @sid, SOL_SOCKET, SO.sndtimeo, tval, ffi.sizeof tval
-                error strerror ffi.errno! if status == -1
+                status.snd = C.setsockopt @sid, SOL_SOCKET, SO.sndtimeo, tval, ffi.sizeof tval
+                error strerror ffi.errno! if status.snd == -1
             if rcv
                 tval = ffi.new "struct timeval[?]", 1
                 luatotimeval tval[0], rcv
-                status = C.setsockopt @sid, SOL_SOCKET, SO.rcvtimeo, tval, ffi.sizeof tval
-                error strerror ffi.errno! if status == -1
+                status.rcv = C.setsockopt @sid, SOL_SOCKET, SO.rcvtimeo, tval, ffi.sizeof tval
+                error strerror ffi.errno! if status.rcv == -1
+            status
 
         broadcast: =>
             @\setopt SO.broadcast, (ffi.cast "int", 1)
