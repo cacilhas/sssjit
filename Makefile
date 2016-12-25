@@ -8,7 +8,7 @@ INSTALL= cp -rf
 RM= rm -rf
 
 SRC= $(wildcard sss/*.moon)
-TARGET= $(SRC:.moon=.lua)
+TARGET= sss/init.lua sss/$(shell $(MOON) find-os.moon).lua
 
 
 #-------------------------------------------------------------------------------
