@@ -6,8 +6,6 @@ MD= mkdir -p
 DEST= $(SHARE_DIR)/sss
 INSTALL= cp -rf
 RM= rm -rf
-
-SRC= $(wildcard sss/*.moon)
 TARGET= sss/init.lua sss/$(shell $(MOON) find-os.moon).lua
 
 
