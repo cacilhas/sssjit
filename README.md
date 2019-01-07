@@ -1,6 +1,6 @@
 # LuaJIT-powered Simple Stupid Socket
 
-A reimplementation of [SSS](https://bitbucket.org/cacilhas/sss) powered by
+A reimplementation of [SSS](https://github.com/cacilhas/sss/) powered by
 [MoonScript](http://moonscript.org/) and [LuaJIT](http://luajit.org).
 
 
