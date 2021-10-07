@@ -199,18 +199,19 @@ Socket = ffi.metatype "struct socket_wrapper",
                 buf ..= aux
             buf
 
-        send: (data) =>
-            status = C.send @sid, data, #data, 0
-            error strerror ffi.errno! if status == -1
-            status
+        send: (data, address=nil) =>
+            if address
+                port = ffi.cast "uint16_t", port
+                sockaddr, size = getsockaddr @domain, address
+                error strerror ffi.errno! if sockaddr == nil
+                status = sendto @sid, data, #data, 0, sockaddr, size
+                error strerror ffi.errno! if status == -1
+                status
 
-        sendto: (data, address) =>
-            port = ffi.cast "uint16_t", port
-            sockaddr, size = getsockaddr @domain, address
-            error strerror ffi.errno! if sockaddr == nil
-            status = sendto @sid, data, #data, 0, sockaddr, size
-            error strerror ffi.errno! if status == -1
-            status
+            else
+                status = C.send @sid, data, #data, 0
+                error strerror ffi.errno! if status == -1
+                status
 
         setopt: (optname, optval) =>
             assert type(optval) == "cdata"

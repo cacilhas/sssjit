@@ -107,7 +107,6 @@ TestSocket =
                     aNotNil s.receive
                     aNotNil s.send
                     aNotNil s.recv
-                    aNotNil s.sendto
                     aNotNil s.setopt
                     aNotNil s.getopt
                     aNotNil s.reuseaddr
